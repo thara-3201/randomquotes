@@ -13,7 +13,7 @@ quote_pipe = pipeline("text-generation", model="ml6team/gpt-2-medium-conditional
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or ["http://localhost:5500"] if using Live Server
+    allow_origins=["https://thara-3201.github.io"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
