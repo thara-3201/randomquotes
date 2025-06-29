@@ -1,4 +1,5 @@
-transformers
 fastapi
 uvicorn
+transformers
 torch
+huggingface_hub
