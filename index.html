@@ -43,7 +43,7 @@
       const quotesDiv = document.getElementById('quotes');
       quotesDiv.innerHTML = "Loading...";
 
-      const response = await fetch('https://randomquotes-dgso.onrender.com/generate', {
+      const response = await fetch('http://127.0.0.1:8000/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
