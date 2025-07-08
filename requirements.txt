@@ -3,3 +3,8 @@ uvicorn
 requests
 pydantic
 python-dotenv
+transformers
+datasets
+dotenv
+fastapi
+pydantic

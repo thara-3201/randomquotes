@@ -8,50 +8,53 @@ from pydantic import BaseModel
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 
+# Use a pipeline as a high-level helper
+from transformers import pipeline
 
-HF_TOKEN = os.environ.get("HF_TOKEN")
-API_URL = "https://api-inference.huggingface.co/models/ml6team/gpt-2-medium-conditional-quote-generator"
-print("Hugging Face Token:", os.environ.get("HF_TOKEN"))
+class PromptInput(BaseModel):
+    prompt: str
 
 app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://thara-3201.github.io", "*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+print("Available routes:")
+for route in app.routes:
+    print(route.path)
 
-class QuoteRequest(BaseModel):
-    topic: str
-    num_quotes: int = 1
+# Global placeholder
+pipe = None
 
-class QuoteResponse(BaseModel):
-    topic: str
-    quotes: List[str]
+@app.post("/generate_local")
+def generate_quotes(data: PromptInput):
+    global pipe
+    if pipe is None:
+        pipe = pipeline("text-generation", model="tharapearlly/phi2-affirmations")
+    output = pipe(data.prompt, max_new_tokens=60, do_sample=True, temperature=0.9)
+    return {"output": output[0]["generated_text"]}
 
-def query_huggingface(prompt: str):
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+
+HF_TOKEN = os.environ.get("HF_TOKEN")
+API_URL = "https://api-inference.huggingface.co/models/tharapearlly/phi2-affirmations"
+headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+
+print("Hugging Face Token:", os.environ.get("HF_TOKEN"))
+
+
+@app.post("/generate")
+def generate_affirmation(data: PromptInput):
     payload = {
-        "inputs": prompt,
-        "parameters": {"max_new_tokens": 60}
+        "inputs": data.prompt,
+        "parameters": {
+            "max_new_tokens": 40,
+            "temperature": 0.7
+        }
     }
-    print("Sending request to Hugging Face...")
-    try:
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=20)
-        response.raise_for_status()
-        result = response.json()
-        print("Response received!")
-        return result[0]['generated_text']
-    except Exception as e:
-        print(f"Request failed: {e}")
-        return "Quote generation failed."
+    response = requests.post(API_URL, headers=headers, json=payload)
 
-@app.post("/generate", response_model=QuoteResponse)
-async def generate_quotes(data: QuoteRequest):
-    results = []
-    for _ in range(data.num_quotes):
-        prompt = f"Topics: {data.topic} | Related Quote:"
-        output = query_huggingface(prompt)
-        quote = output.split("Related Quote:")[-1].strip()
-        results.append(quote)
-    return {"topic": data.topic, "quotes": results}
+    # 👇 Add this to debug
+    print("Status Code:", response.status_code)
+    print("Response Text:", response.text)
+
+    # Try to parse JSON safely
+    try:
+        return response.json()
+    except Exception as e:
+        return {"error": str(e), "raw": response.text}
