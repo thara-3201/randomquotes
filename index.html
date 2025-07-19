@@ -42,7 +42,7 @@
             resultDiv.innerText = 'Generating...';
 
             try {
-                const response = await fetch(`https://tharapearlly/smollm-affirmations.hf.space/generate?prompt=${encodeURIComponent(topic)}`);
+                const response = await fetch(`https://tharapearlly-smollm-affirmations.hf.space/generate?prompt=${encodeURIComponent(topic)}`);
                 const data = await response.json();
                 resultDiv.innerText = data.output;
             } catch (error) {
